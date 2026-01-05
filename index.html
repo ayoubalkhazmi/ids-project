@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS Comparison Framework</title>
+    <!-- CSS is expected in /frontend/demo_style.css, served as /static/demo_style.css -->
+    <link rel="stylesheet" href="/static/demo_style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <!-- Top Status Bar: Important for backend state -->
+    <div class="system-status-bar">
+        <div class="status-item">
+            <span class="dot" id="sup-status-dot"></span> 
+            Supervised Model: <span id="sup-status-text">Not Trained</span>
+        </div>
+        <div class="status-item">
+            <span class="dot" id="unsup-status-dot"></span> 
+            Unsupervised Model: <span id="unsup-status-text">Not Trained</span>
+        </div>
+        <div class="status-item live-indicator">
+            <span class="pulse-dot"></span> System: <span id="system-health">Ready</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Network Security Analyzer</h1>
+            <p class="subtitle">Comparative Intrusion Detection System (C-IDS)</p>
+        </header>
+
+        <!-- Configuration Section -->
+        <div class="mode-selection" id="main-selection">
+            <div class="section-header">
+                <h2>1. Setup & Training</h2>
+                <p>Initialize your models using the dataset before starting analysis.</p>
+            </div>
+            <div class="training-grid">
+                <div class="mode-card">
+                    <i data-lucide="brain-circuit"></i>
+                    <h3>Supervised Training</h3>
+                    <p>Train using labeled data (Random Forest).</p>
+                    <button class="btn-sub-mode" onclick="triggerTrain('supervised')">Initialize Supervised</button>
+                </div>
+                <div class="mode-card">
+                    <i data-lucide="fingerprint"></i>
+                    <h3>Unsupervised Training</h3>
+                    <p>Detect anomalies (Isolation Forest).</p>
+                    <button class="btn-sub-mode" onclick="triggerTrain('unsupervised')">Initialize Unsupervised</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode Selection -->
+        <div class="mode-selection">
+            <h2>2. Select Analysis Mode</h2>
+            <div class="mode-cards">
+                <!-- Batch Mode -->
+                <div class="mode-card container-only" id="mode-batch">
+                    <div class="mode-icon"><i data-lucide="database"></i></div>
+                    <h3>Batch File Analysis</h3>
+                    <p>Process CSV logs for comprehensive comparison reports.</p>
+                    <button class="btn-primary" onclick="showSection('upload-section')">Open File Uploader</button>
+                </div>
+
+                <!-- Live Mode -->
+                <div class="mode-card container-only" id="mode-live-container">
+                    <div class="mode-icon"><i data-lucide="activity"></i></div>
+                    <h3>Live Monitor</h3>
+                    <p>Simulate real-time traffic and watch detection logic trigger.</p>
+                    <button class="btn-primary" onclick="showSection('live-controls')">Launch Monitor</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Control Panel -->
+        <div class="upload-section card-hidden" id="live-controls">
+            <div class="live-layout">
+                <div class="live-controls-left">
+                    <h2>Live Traffic Stream</h2>
+                    <div class="action-bar">
+                        <button id="start-stream-btn" onclick="startLiveStream()" class="btn-start">Start Stream</button>
+                        <button id="stop-stream-btn" onclick="stopLiveStream()" class="btn-stop" style="display:none;">Stop Stream</button>
+                    </div>
+                </div>
+                <div class="terminal-container">
+                    <div class="terminal-header">System Logs</div>
+                    <div id="terminal-log" class="terminal-body">
+                        > System initialized. Waiting for stream start...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="upload-section card-hidden" id="upload-section">
+            <h2>Upload Traffic Logs</h2>
+            <div class="upload-area" id="upload-area">
+                <input type="file" id="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                <label for="file-input" class="upload-label">
+                    <div class="upload-icon"><i data-lucide="file-up"></i></div>
+                    <p>Click to upload CSV logs</p>
+                </label>
+            </div>
+            <div class="action-bar">
+                <button id="analyze-btn" onclick="analyzeTraffic()" disabled class="btn-primary">Run Comparison Analysis</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section card-hidden" id="results-section">
+            <div class="results-header">
+                <h2>Comparison Results</h2>
+                <div class="export-actions">
+                    <button onclick="window.print()" class="btn-export"><i data-lucide="printer"></i> Print Report</button>
+                    <button onclick="reset()" class="btn-secondary">Reset</button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Stats Compare Side-by-Side -->
+                <div class="stats-comparison">
+                    <div class="stat-card supervised">
+                        <h4>Supervised Accuracy</h4>
+                        <div class="stat-value" id="sup-acc">0%</div>
+                    </div>
+                    <div class="stat-card unsupervised">
+                        <h4>Unsupervised Anomalies</h4>
+                        <div class="stat-value" id="unsup-count">0</div>
+                    </div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="chart-container">
+                    <h3>Detection Breakdown</h3>
+                    <canvas id="resultsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Detailed Table -->
+            <div class="table-container">
+                <h3>Detection Log</h3>
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Packet ID</th>
+                            <th>Supervised Label</th>
+                            <th>Unsupervised Score</th>
+                            <th>Conflict?</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script imports -->
+    <script src="/static/demo_script.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Helper to show/hide sections
+        function showSection(id) {
+            document.querySelectorAll('.upload-section, .results-section').forEach(el => el.classList.add('card-hidden'));
+            document.getElementById(id).classList.remove('card-hidden');
+        }
+    </script>
+</body>
+</html>
